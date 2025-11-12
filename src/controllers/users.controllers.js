@@ -1,4 +1,5 @@
 import {pool} from "../db.js";
+import jwt from "jsonwebtoken";
 
 export const getUsers = async (req, res) => {
   const {rows} = await pool.query("SELECT * FROM panaderia.usuario");
@@ -56,3 +57,24 @@ export const updateUserId = async (req, res) => {
   }
   res.json(rows[0]);
 };
+
+export const loginUser = async (req, res) => {
+  try {
+      const {email, password} = req.body; 
+      const result = await pool.query("SELECT * FROM panaderia.usuario WHERE correo = $1 AND contrasena = $2", [email, password]);
+      if(result.rows.length === 0){
+          return res.status(401).json({message: "Credenciales inválidas"});
+      }
+      const token = jwt.sign({email, password}, SECRET_JWT_KEY, 
+        {expiresIn: '1h'});
+      res.json({
+        message: 'Login exitoso',
+        token: token,
+        user: result.rows[0]
+      });
+  } catch (error) {
+      res.status(500).json({message: "Error del servidor"});
+  }
+};
+
+    
