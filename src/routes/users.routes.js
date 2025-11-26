@@ -5,21 +5,28 @@ import {
   getUserId,
   getUsers,
   updateUserId,
-  loginUser
+  loginUser,
+  verifyTokenController,
+  logoutUser
 } from "../controllers/users.controllers.js";
+import { verifyToken } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.get("/users", getUsers);
+// Rutas públicas (no requieren autenticación)
+router.post("/auth/login", loginUser);
+router.post("/auth/register", createUser);
 
-router.get("/users/:userId", getUserId);
+// Rutas protegidas (requieren autenticación)
+router.get("/users", verifyToken, getUsers);
+router.get("/users/:userId", verifyToken, getUserId);
+router.put("/users/:userId", verifyToken, updateUserId);
+router.delete("/users/:userId", verifyToken, deleteUserId);
 
-router.post("/users", createUser);
+// Ruta para verificar token
+router.get("/verify", verifyToken, verifyTokenController);
 
-router.delete("/users:userId", deleteUserId);
-
-router.put("/users/:userId", updateUserId);
-
-router.post("/login", loginUser);
+// Ruta para logout
+router.post("/auth/logout", verifyToken, logoutUser);
 
 export default router;
