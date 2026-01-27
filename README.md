@@ -50,12 +50,6 @@ npm run dev
 npm start
 ```
 
-## 📚 Documentación
-
-- **[Guía de Despliegue](./DEPLOYMENT.md)** - Pasos completos para replicar en otro ambiente
-- **[Documentación de API](./API_DOCUMENTATION.md)** - Todos los endpoints disponibles
-- **[Pruebas de API](./api-tests.http)** - Colección de pruebas con REST Client
-
 ## 🔐 Endpoints Principales
 
 ### Autenticación (Públicos)
@@ -168,5 +162,3 @@ ISC
 Desarrollado para SysPanAPP
 
 ---
-
-**¿Necesitas ayuda?** Consulta la [Guía de Despliegue](./DEPLOYMENT.md) o la [Documentación de API](./API_DOCUMENTATION.md).
