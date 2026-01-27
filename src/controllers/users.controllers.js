@@ -25,15 +25,13 @@ export const createUser =  async (req, res) => {
   {
     const data = req.body;
     
-    // Hashear la contraseña antes de guardarla
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
     const {rows} = await pool.query(
       "INSERT INTO panaderia.usuario (nombre, correo, contrasena, rol) VALUES ($1, $2, $3, $4) RETURNING *", 
       [data.nombre, data.email, hashedPassword, data.rol]
     );
-    
-    // No retornar la contraseña en la respuesta
+
     const user = rows[0];
     delete user.contrasena;
     
@@ -65,8 +63,7 @@ export const updateUserId = async (req, res) => {
   try {
     const {userId} = req.params;
     const data = req.body;
-    
-    // Hashear la contraseña si se está actualizando
+
     let hashedPassword = data.password;
     if (data.password) {
       hashedPassword = await bcrypt.hash(data.password, 10);
@@ -80,8 +77,7 @@ export const updateUserId = async (req, res) => {
     if(rows.length === 0){
       return res.status(404).json({message: "Usuario no encontrado"});
     }
-    
-    // No retornar la contraseña en la respuesta
+
     const user = rows[0];
     delete user.contrasena;
     
@@ -96,7 +92,6 @@ export const loginUser = async (req, res) => {
   try {
       const {email, password} = req.body; 
       
-      // Buscar usuario solo por email
       const result = await pool.query(
         "SELECT * FROM panaderia.usuario WHERE correo = $1", 
         [email]
@@ -108,14 +103,12 @@ export const loginUser = async (req, res) => {
       
       const user = result.rows[0];
       
-      // Comparar la contraseña con el hash almacenado
       const isPasswordValid = await bcrypt.compare(password, user.contrasena);
       
       if(!isPasswordValid){
           return res.status(401).json({message: "Credenciales inválidas"});
       }
       
-      // Crear token con información relevante del usuario
       const token = jwt.sign(
         {
           id_usuario: user.id_usuario,
@@ -125,8 +118,6 @@ export const loginUser = async (req, res) => {
         SECRET_JWT_KEY, 
         {expiresIn: '1h'}
       );
-      
-      // No retornar la contraseña en la respuesta
       delete user.contrasena;
       
       res.json({
@@ -141,21 +132,13 @@ export const loginUser = async (req, res) => {
 };
 
 export const verifyTokenController = (req, res) => {
-  // Si llegamos aquí, el token ya fue verificado por el middleware
   res.json({
     message: "Token válido",
     user: req.user
   });
 };
 
-export const logoutUser = (req, res) => {
-  // Con JWT, el logout se maneja principalmente del lado del cliente
-  // El cliente debe eliminar el token de su almacenamiento (localStorage, sessionStorage, etc.)
-  // Aquí simplemente confirmamos el logout y retornamos un mensaje
-  
-  // Si llegamos aquí, el token fue verificado por el middleware
-  // Esto asegura que solo usuarios autenticados puedan hacer logout
-  
+export const logoutUser = (req, res) => {  
   res.json({
     message: "Logout exitoso. Por favor elimina el token del cliente.",
     user: req.user.email

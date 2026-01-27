@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PanSys - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">PanSys</div>
+            <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            <a href="inventory.html" class="nav-link">Inventario</a>
+            <a href="#" class="nav-link">Recetas</a>
+            <a href="#" class="nav-link">Producción</a>
+            <div style="margin-top: auto;">
+                <div style="padding: 15px; color: #666; font-size: 14px;">
+                    <strong id="userName">Usuario</strong><br>
+                    <small id="userEmail"></small>
+                </div>
+                <a href="#" class="nav-link" id="logoutBtn" style="color: #B00020;">Cerrar Sesión</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1>Hola, <span id="welcomeName">Usuario</span></h1>
+                    <p>Resumen operativo del día</p>
+                </div>
+            </header>
+
+            <section class="cards-grid">
+                <div class="card">
+                    <h3>VENTAS DEL DÍA</h3>
+                    <div class="value" id="dash-ventas">
+                        <span class="spinner"></span>
+                    </div>
+                    <small style="color: green;" id="dash-ventas-var">Cargando...</small>
+                </div>
+                <div class="card">
+                    <h3>PEDIDOS PENDIENTES</h3>
+                    <div class="value" id="dash-pedidos">
+                        <span class="spinner"></span>
+                    </div>
+                    <small>Urgentes</small>
+                </div>
+                <div class="card">
+                    <h3>ALERTA DE INVENTARIO</h3>
+                    <div class="value" id="dash-alertas">
+                        <span class="spinner"></span>
+                    </div>
+                    <small>Insumos críticos</small>
+                </div>
+                <div class="card">
+                    <h3>MOVIMIENTOS HOY</h3>
+                    <div class="value" id="dash-movimientos">
+                        <span class="spinner"></span>
+                    </div>
+                    <small>Entradas/Salidas</small>
+                </div>
+            </section>
+
+            <section style="margin-top: 30px;">
+                <h2>Materias Primas Críticas</h2>
+                <div class="table-container" style="margin-top: 15px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Materia Prima</th>
+                                <th>Stock Actual</th>
+                                <th>Mínimo</th>
+                                <th>Faltante</th>
+                                <th>Proveedor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="criticas-body">
+                            <tr>
+                                <td colspan="5" style="text-align:center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="api-service.js"></script>
+    <script>
+        // Verificar autenticación
+        requireAuth();
+
+        // Cargar datos del usuario
+        const user = api.getUser();
+        if (user) {
+            document.getElementById('userName').textContent = user.nombre;
+            document.getElementById('userEmail').textContent = user.correo;
+            document.getElementById('welcomeName').textContent = user.nombre.split(' ')[0];
+        }
+
+        // Manejar logout
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await api.logout();
+            window.location.href = 'login.html';
+        });
+
+        // Cargar datos del dashboard
+        async function loadDashboard() {
+            try {
+                const data = await api.getDashboardSummary();
+
+                // Actualizar ventas
+                document.getElementById('dash-ventas').textContent = formatMoney(data.ventas_dia.total);
+                document.getElementById('dash-ventas-var').textContent = `↑ ${data.ventas_dia.variacion}% vs ayer`;
+
+                // Actualizar pedidos
+                document.getElementById('dash-pedidos').textContent = data.pedidos_pendientes;
+
+                // Actualizar alertas
+                document.getElementById('dash-alertas').textContent = data.alertas_inventario;
+
+                // Actualizar movimientos
+                document.getElementById('dash-movimientos').textContent = data.movimientos_hoy;
+
+            } catch (error) {
+                showError('Error al cargar datos del dashboard');
+                console.error(error);
+            }
+        }
+
+        // Cargar materias primas críticas
+        async function loadMateriasCriticas() {
+            try {
+                const data = await api.getMateriasCriticas();
+                const tbody = document.getElementById('criticas-body');
+
+                if (data === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #00C853;">✓ No hay materias primas en estado crítico</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.data.map(item => `
+                    <tr>
+                        <td><strong>${item.nombre}</strong></td>
+                        <td>${parseFloat(item.cantidad_disponible).toFixed(2)} ${item.unidad_medida}</td>
+                        <td>${parseFloat(item.minimo).toFixed(2)} ${item.unidad_medida}</td>
+                        <td style="color: #B00020; font-weight: bold;">${parseFloat(item.cantidad_disponible - item.minimo).toFixed(2)} ${item.unidad_medida}</td>
+                        <td>${item.proveedor || 'N/A'}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                showError('Error al cargar materias críticas');
+                console.error(error);
+            }
+        }
+
+        // Cargar datos al iniciar
+        loadDashboard();
+        loadMateriasCriticas();
+
+        // Actualizar cada 30 segundos
+        setInterval(() => {
+            loadDashboard();
+            loadMateriasCriticas();
+        }, 30000);
+    </script>
+</body>
+
+</html>

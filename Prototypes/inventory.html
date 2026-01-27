@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PanSys - Inventario</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">PanSys</div>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="inventory.html" class="nav-link active">Inventario</a>
+            <a href="#" class="nav-link">Recetas</a>
+            <a href="#" class="nav-link">Producción</a>
+            <div style="margin-top: auto;">
+                <div style="padding: 15px; color: #666; font-size: 14px;">
+                    <strong id="userName">Usuario</strong><br>
+                    <small id="userEmail"></small>
+                </div>
+                <a href="#" class="nav-link" id="logoutBtn" style="color: #B00020;">Cerrar Sesión</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1>Inventario</h1>
+                    <p style="color: #666;">Gestión de existencias en bodega</p>
+                </div>
+                <button id="btn-nuevo" class="btn-primary">
+                    + Nuevo Insumo
+                </button>
+            </header>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre del Insumo</th>
+                            <th>Proveedor</th>
+                            <th>Stock Actual</th>
+                            <th>Mínimo</th>
+                            <th>Fecha Caducidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-body">
+                        <tr>
+                            <td colspan="7" style="text-align:center;">Cargando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Insumo -->
+    <div id="modal-nuevo-insumo" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" data-target="modal-nuevo-insumo">&times;</span>
+            <h2 style="color: var(--primary-color);">Registrar Nuevo Insumo</h2>
+            <form id="form-nuevo-insumo">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="nuevo-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Proveedor</label>
+                    <input type="text" id="nuevo-proveedor">
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Stock Inicial *</label>
+                        <input type="number" id="nuevo-stock" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Unidad *</label>
+                        <select id="nuevo-unidad" class="input-select" required>
+                            <option value="kg">kg</option>
+                            <option value="pz">pz</option>
+                            <option value="lt">lt</option>
+                            <option value="gr">gr</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Stock Mínimo *</label>
+                    <input type="number" id="nuevo-minimo" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Caducidad</label>
+                    <input type="date" id="nuevo-caducidad">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                    <button type="button" class="btn-cancelar" data-target="modal-nuevo-insumo">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" data-target="modal-editar">&times;</span>
+            <h2 style="color: var(--primary-color);">Editar Insumo</h2>
+            <form id="form-editar">
+                <input type="hidden" id="edit-id">
+
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="edit-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Proveedor</label>
+                    <input type="text" id="edit-proveedor">
+                </div>
+                <div class="form-group">
+                    <label>Unidad *</label>
+                    <select id="edit-unidad" class="input-select" required>
+                        <option value="kg">kg</option>
+                        <option value="pz">pz</option>
+                        <option value="lt">lt</option>
+                        <option value="gr">gr</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Stock Mínimo (Alerta) *</label>
+                    <input type="number" id="edit-minimo" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Caducidad</label>
+                    <input type="date" id="edit-caducidad">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                    <button type="button" class="btn-cancelar" data-target="modal-editar">Cancelar</button>
+                    <button type="submit" class="btn-primary">Actualizar Datos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Reabastecer -->
+    <div id="modal-reabastecer" class="modal">
+        <div class="modal-content" style="max-width: 350px;">
+            <span class="close-btn" data-target="modal-reabastecer">&times;</span>
+            <h2 style="color: var(--success-color);">Reabastecer Stock</h2>
+            <p id="reabastecer-titulo">Agregando existencias a: ...</p>
+
+            <form id="form-reabastecer">
+                <input type="hidden" id="reabastecer-id">
+
+                <div class="form-group" style="background: #f0f0f0; padding: 10px; border-radius: 5px;">
+                    <label>Stock Actual:</label>
+                    <strong id="stock-actual-display" style="font-size: 1.2rem;">0</strong>
+                </div>
+
+                <div class="form-group">
+                    <label style="color: var(--success-color);">Cantidad a Ingresar (+) *</label>
+                    <input type="number" id="cantidad-agregar" placeholder="Ej. 50" step="0.01" min="0.01" required
+                        style="border: 2px solid var(--success-color);">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                    <button type="button" class="btn-cancelar" data-target="modal-reabastecer">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="background-color: var(--success-color);">Confirmar
+                        Ingreso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="api-service.js"></script>
+    <script>
+        // Verificar autenticación
+        requireAuth();
+
+        // Cargar datos del usuario
+        const user = api.getUser();
+        if (user) {
+            document.getElementById('userName').textContent = user.nombre;
+            document.getElementById('userEmail').textContent = user.correo;
+        }
+
+        // Manejar logout
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await api.logout();
+            window.location.href = 'login.html';
+        });
+
+        // ============================================
+        // CARGAR Y RENDERIZAR TABLA
+        // ============================================
+
+        async function cargarInventario() {
+            try {
+                const response = await api.getMateriasPrimas({ activo: 'true' });
+                renderizarTabla(response.data);
+            } catch (error) {
+                showError('Error al cargar inventario');
+                console.error(error);
+            }
+        }
+
+        function renderizarTabla(materias) {
+            const tbody = document.getElementById('tabla-body');
+
+            if (materias.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay materias primas registradas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = materias.map(item => {
+                const esCritico = parseFloat(item.cantidad_disponible) <= parseFloat(item.minimo);
+                const claseBadge = esCritico ? 'status-low' : 'status-ok';
+                const textoBadge = esCritico ? 'Crítico' : 'Normal';
+                const estiloBtn = esCritico ? 'color: #B00020; font-weight:bold;' : 'color: #6200EE;';
+
+                const fechaCaducidad = item.fecha_caducidad ? formatDate(item.fecha_caducidad) : 'N/A';
+
+                return `
+                    <tr>
+                        <td><strong>${item.nombre}</strong></td>
+                        <td>${item.proveedor || 'N/A'}</td>
+                        <td>${parseFloat(item.cantidad_disponible).toFixed(2)} ${item.unidad_medida}</td>
+                        <td>${parseFloat(item.minimo).toFixed(2)} ${item.unidad_medida}</td>
+                        <td>${fechaCaducidad}</td>
+                        <td><span class="status-badge ${claseBadge}">${textoBadge}</span></td>
+                        <td>
+                            <a href="#" style="margin-right:10px; ${estiloBtn}" onclick="abrirReabastecer(${item.id_materia_prima})">Reabastecer</a>
+                            <a href="#" style="color:#666;" onclick="abrirEditar(${item.id_materia_prima})">Editar</a>
+                            <a href="#" style="color:#B00020; margin-left:10px;" onclick="eliminarMateria(${item.id_materia_prima})">Eliminar</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // MODALES
+        // ============================================
+
+        // Cerrar modales
+        document.querySelectorAll('.close-btn, .btn-cancelar').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).style.display = 'none';
+            });
+        });
+
+        // Abrir modal nuevo
+        document.getElementById('btn-nuevo').addEventListener('click', () => {
+            document.getElementById('modal-nuevo-insumo').style.display = 'block';
+        });
+
+        // ============================================
+        // CREAR NUEVA MATERIA PRIMA
+        // ============================================
+
+        document.getElementById('form-nuevo-insumo').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                nombre: document.getElementById('nuevo-nombre').value,
+                proveedor: document.getElementById('nuevo-proveedor').value || null,
+                unidad: document.getElementById('nuevo-unidad').value,
+                cantidad_disponible: parseFloat(document.getElementById('nuevo-stock').value),
+                minimo: parseFloat(document.getElementById('nuevo-minimo').value),
+                fecha_caducidad: document.getElementById('nuevo-caducidad').value || null,
+                activo: true
+            };
+
+            try {
+                await api.createMateriaPrima(data);
+                showSuccess('Materia prima creada exitosamente');
+                document.getElementById('modal-nuevo-insumo').style.display = 'none';
+                document.getElementById('form-nuevo-insumo').reset();
+                cargarInventario();
+            } catch (error) {
+                showError(error.message || 'Error al crear materia prima');
+            }
+        });
+
+        // ============================================
+        // EDITAR MATERIA PRIMA
+        // ============================================
+
+        window.abrirEditar = async function (id) {
+            try {
+                const item = await api.getMateriaPrima(id);
+
+                document.getElementById('edit-id').value = item.id_materia_prima;
+                document.getElementById('edit-nombre').value = item.nombre;
+                document.getElementById('edit-proveedor').value = item.proveedor || '';
+                document.getElementById('edit-unidad').value = item.unidad_medida;
+                document.getElementById('edit-minimo').value = item.minimo;
+                document.getElementById('edit-caducidad').value = item.fecha_caducidad ? item.fecha_caducidad.split('T')[0] : '';
+
+                document.getElementById('modal-editar').style.display = 'block';
+            } catch (error) {
+                showError('Error al cargar datos');
+            }
+        };
+
+        document.getElementById('form-editar').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                nombre: document.getElementById('edit-nombre').value,
+                proveedor: document.getElementById('edit-proveedor').value || null,
+                unidad_medida: document.getElementById('edit-unidad').value,
+                minimo: parseFloat(document.getElementById('edit-minimo').value),
+                fecha_caducidad: document.getElementById('edit-caducidad').value || null
+            };
+
+            try {
+                await api.updateMateriaPrima(id, data);
+                showSuccess('Materia prima actualizada exitosamente');
+                document.getElementById('modal-editar').style.display = 'none';
+                cargarInventario();
+            } catch (error) {
+                showError(error.message || 'Error al actualizar');
+            }
+        });
+
+        // ============================================
+        // REABASTECER (REGISTRAR ENTRADA)
+        // ============================================
+
+        window.abrirReabastecer = async function (id) {
+            try {
+                const item = await api.getMateriaPrima(id);
+
+                document.getElementById('reabastecer-id').value = item.id_materia_prima;
+                document.getElementById('reabastecer-titulo').textContent = `Agregando a: ${item.nombre}`;
+                document.getElementById('stock-actual-display').textContent = `${parseFloat(item.cantidad_disponible).toFixed(2)} ${item.unidad_medida}`;
+
+                document.getElementById('modal-reabastecer').style.display = 'block';
+                document.getElementById('cantidad-agregar').focus();
+            } catch (error) {
+                showError('Error al cargar datos');
+            }
+        };
+
+        document.getElementById('form-reabastecer').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById('reabastecer-id').value);
+            const cantidad = parseFloat(document.getElementById('cantidad-agregar').value);
+
+            try {
+                const response = await api.reabastecerMateriaPrima(id, {
+                    cantidad_disponible: cantidad
+                });
+
+                showSuccess(`Stock actualizado. Nuevo stock: ${parseFloat(response.data.cantidad_disponible).toFixed(2)}`);
+                document.getElementById('modal-reabastecer').style.display = 'none';
+                document.getElementById('form-reabastecer').reset();
+                cargarInventario();
+            } catch (error) {
+                showError(error.message || 'Error al registrar movimiento');
+            }
+        });
+
+        // ============================================
+        // ELIMINAR MATERIA PRIMA
+        // ============================================
+
+        window.eliminarMateria = async function (id) {
+            if (!confirm('¿Está seguro de eliminar esta materia prima?')) {
+                return;
+            }
+
+            try {
+                await api.deleteMateriaPrima(id);
+                showSuccess('Materia prima eliminada exitosamente');
+                cargarInventario();
+            } catch (error) {
+                showError(error.message || 'Error al eliminar');
+            }
+        };
+
+        // Cargar inventario al iniciar
+        cargarInventario();
+
+        // Actualizar cada 30 segundos
+        setInterval(cargarInventario, 30000);
+    </script>
+</body>
+
+</html>
